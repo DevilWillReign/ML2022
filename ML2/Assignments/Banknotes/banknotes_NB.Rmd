@@ -1,0 +1,340 @@
+---
+output: github_document
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.2'
+      jupytext_version: 1.13.8
+  kernelspec:
+    display_name: Python 3 (ipykernel)
+    language: python
+    name: python3
+---
+
+# Counterfeit detection
+
+
+The task in this assignment is to detect the  counterfeit banknotes. The data set is based on [banknote authentication Data Set ](https://archive.ics.uci.edu/ml/datasets/banknote+authentication#) from UCI Machine Learning repository. The first three columns denote different parameters obtained from the photographs of the banknotes and last colum provides the label. Frankly as the dataset does not have any description I don't know  which labels corresponds to real and which to counterfeited banknotes. let's assume that label one (positive) denotes the clounterfeits. The set  "banknote_authentication.csv" can be found in the data  directory.
+
+```{python}
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.stats as st
+import scrapbook as sb
+```
+
+```{python}
+import  matplotlib.pyplot as plt
+# %matplotlib inline
+fig_height = 10
+fig_width =15
+plt.rcParams["figure.figsize"] = [fig_width, fig_height]
+```
+
+Please insert you  firstname  and name below
+
+```{python}
+sb.glue("Who", ["FirstName", "Name"])
+```
+
+```{python tags=c()}
+from  sklearn.model_selection import train_test_split
+seed = 31287
+```
+
+```{python}
+data = pd.read_csv('data/banknotes_data.csv')
+```
+
+```{python tags=c()}
+data.head()
+```
+
+```{python tags=c("skip")}
+data.describe()
+```
+
+```{python tags=c("skip")}
+data.info()
+```
+
+```{python tags=c()}
+data_train, data_test = train_test_split(data, test_size=0.2, shuffle=True, stratify=data.loc[:,'counterfeit'], random_state=seed)
+```
+
+```{python tags=c()}
+lbls_train = data_train['counterfeit']
+```
+
+```{python tags=c()}
+fig, ax = plt.subplots(1,4, figsize=(22,5))
+for i in range(4):
+    ax[i].hist(data_train[lbls_train==0].iloc[:,i], bins=32, histtype='step', color='blue')
+    ax[i].hist(data_train[lbls_train==1].iloc[:,i], bins=32, histtype='step', color='red')
+    ax[i].hist(data_train[lbls_train==0].iloc[:,i], bins=32, histtype='bar', color='lightblue', alpha=0.25)
+    ax[i].hist(data_train[lbls_train==1].iloc[:,i], bins=32, histtype='bar', color='orange', alpha =0.25)
+```
+
+<!-- #region tags=[] -->
+You will have to install a popular plotting library `seaborn`
+<!-- #endregion -->
+
+```{python tags=c()}
+import seaborn
+```
+
+```{python tags=c()}
+seaborn.pairplot(data_train.iloc[:,0:5], hue='counterfeit');
+```
+
+```{python tags=c()}
+len(data_train)
+```
+
+## Problem 1
+
+
+Implement Gaussian  Bayes classifier using only one feature. Which feature will you choose? Calculate the confusion matrix (normalized as to show rates), ROC AUC score and plot ROC curve. Do this bot for training and validation set. Plot both curves on the same plot. Save everything using `scrapbook`. 
+
+
+__Hint__ For calculating metrics and plotting ROC curves you may use functions from scikit-learn: `roc_curve`, `roc_auc_score` and `confusion matrix`. For estimating normal distribution parameters  use `norm.fit` `from scipy.stats`. Use `norm.pdf` for normal probability density function.
+
+```{python}
+from sklearn.metrics import roc_auc_score, roc_curve, confusion_matrix, ConfusionMatrixDisplay
+```
+
+```{python}
+def make_pdf_P_cond(labels, data):
+    """Takes labels (0,1) and a single feature and returns the conditional 
+    probability distribution function of the   positive label given the feature assuming
+    normal distribution of the  feature values.
+    """
+    
+    positives = data[labels==1]
+    negatives = data[labels==0]
+    
+    pd_cond_P = st.norm(*st.norm.fit(positives))
+    pd_cond_N = st.norm(*st.norm.fit(negatives))
+    
+    pdf_cond_P = pd_cond_P.pdf
+    pdf_cond_N = pd_cond_N.pdf
+    
+    P_P = labels.mean()
+    P_N = 1-P_P
+    
+    def pdf(x):
+        return pdf_cond_P(x)*P_P/(pdf_cond_P(x)*P_P+pdf_cond_N(x)*P_N)
+
+    return pdf
+```
+
+```{python}
+pdf_a_cond = make_pdf_P_cond(data_train.counterfeit==1, data_train.a0)
+```
+
+```{python}
+train_labels = data_train.counterfeit==1
+train_classification = pdf_a_cond(data_train.a0)>0.5
+ConfusionMatrixDisplay.from_predictions(train_labels, train_classification, display_labels=('Counterfeit', 'Not Counterfeit'), values_format='5d');
+```
+
+```{python}
+test_labels = data_test.counterfeit==1
+test_classification = pdf_a_cond(data_test.a0)>0.5
+ConfusionMatrixDisplay.from_predictions(test_labels, test_classification, display_labels=('Not Counterfeit', 'Counterfeit'), values_format='5d');
+```
+
+```{python}
+fprs, tprs, thds = roc_curve(test_labels, pdf_a_cond(data_test.a0))
+a_auc = roc_auc_score(test_labels, pdf_a_cond(data_test.a0))
+def roc_plot(figsize=[fig_height,fig_height]):
+    """Returns figure and axes object for plotting ROC curve
+    setting aspect ration to one and labeling the axes.
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set_aspect(1)
+    ax.set_xlabel('FPR');
+    ax.set_ylabel('TPR');
+    return fig,ax
+fig, ax = roc_plot()
+fpr = np.sum(test_classification> test_labels)/np.sum(test_labels)
+fnr = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
+tpr = 1-fnr
+
+roc = ax.plot(fprs,tprs, color='blue');
+ax.scatter([fpr],[tpr],s = 30, color='blue', zorder=5)
+ax.text(0.7, 0.8, "AUC = {:4.2f}".format(a_auc), fontsize=12);
+
+ax.set_title("ROC curve", fontsize=14);
+ax.plot([0,1],[0,1],'-', c='grey', linewidth = 1 )
+ax.plot([0,0,1],[0,1,1],'--', c = roc[0].get_color() , linewidth=0.5)
+ax.scatter([0],[0],s = 30, c = roc[0].get_color() )
+ax.scatter([1],[1],s = 30)
+ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
+ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
+ax.grid()
+```
+
+## Problem 2
+
+
+Same as Problem 1 but now implement Gaussian Naive Bayes using two features. Compare ROC curves on the test set. What is teh improvement of AUC score on the test set?
+
+```{python}
+def make_pdf_P_cond2(labels, data1, data2):
+    """Takes labels (0,1) and a single feature and returns the conditional 
+    probability distribution function of the   positive label given the feature assuming
+    normal distribution of the  feature values.
+    """
+    
+    positives1 = data1[labels==1]
+    negatives1 = data1[labels==0]
+    
+    positives2 = data2[labels==1]
+    negatives2 = data2[labels==0]
+    
+    pdf_cond_P1 = st.norm(*st.norm.fit(positives1)).pdf
+    pdf_cond_N1 = st.norm(*st.norm.fit(negatives1)).pdf
+    
+    pdf_cond_P2 = st.norm(*st.norm.fit(positives2)).pdf
+    pdf_cond_N2 = st.norm(*st.norm.fit(negatives2)).pdf
+    
+    P_P = labels.mean()
+    P_N = 1-P_P
+    
+    def pdf(x1, x2):
+        p_prod = pdf_cond_P1(x1)*pdf_cond_P2(x2)*P_P
+        n_prod = pdf_cond_N1(x1)*pdf_cond_N2(x2)*P_N
+        return p_prod/(p_prod + n_prod)
+
+    return pdf
+```
+
+```{python}
+pdf_a_cond2 = make_pdf_P_cond2(data_train.counterfeit==1, data_train.a0, data_train.a1)
+```
+
+```{python}
+test_labels = data_test.counterfeit==1
+test_classification = pdf_a_cond2(data_test.a0, data_test.a1)>0.5
+ConfusionMatrixDisplay.from_predictions(test_labels, test_classification, display_labels=('Not Counterfeit', 'Counterfeit'), values_format='5d');
+```
+
+```{python}
+fprs, tprs, thds = roc_curve(test_labels, pdf_a_cond2(data_test.a0, data_test.a1))
+a_auc2 = roc_auc_score(test_labels, pdf_a_cond2(data_test.a0, data_test.a1))
+def roc_plot(figsize=[fig_height,fig_height]):
+    """Returns figure and axes object for plotting ROC curve
+    setting aspect ration to one and labeling the axes.
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set_aspect(1)
+    ax.set_xlabel('FPR');
+    ax.set_ylabel('TPR');
+    return fig,ax
+fig, ax = roc_plot()
+fpr = np.sum(test_classification> test_labels)/np.sum(test_labels)
+fnr = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
+tpr = 1-fnr
+
+roc = ax.plot(fprs,tprs, color='blue');
+ax.scatter([fpr],[tpr],s = 30, color='blue', zorder=5)
+ax.text(0.7, 0.8, "AUC = {:4.2f}\nAUC2 = {:4.2f}".format(a_auc, a_auc2), fontsize=12);
+
+ax.set_title("ROC curve", fontsize=14);
+ax.plot([0,1],[0,1],'-', c='grey', linewidth = 1 )
+ax.plot([0,0,1],[0,1,1],'--', c = roc[0].get_color() , linewidth=0.5)
+ax.scatter([0],[0],s = 30, c = roc[0].get_color() )
+ax.scatter([1],[1],s = 30)
+ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
+ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
+ax.grid()
+```
+
+## Problem 3
+
+
+Same as Problem 2 but now implement Gaussian Naive Bayes using all features.
+
+```{python}
+def make_pdf_P_condall(labels, data):
+    """Takes labels (0,1) and a single feature and returns the conditional 
+    probability distribution function of the   positive label given the feature assuming
+    normal distribution of the  feature values.
+    """
+    positives = []
+    negatives = []
+    for d in data:
+        positives.append(d[labels==1])
+        negatives.append(d[labels==0])
+    
+    pdf_cond_Ps = []
+    pdf_cond_Ns = []
+    for p in positives:
+        pdf_cond_Ps.append(st.norm(*st.norm.fit(p)).pdf)
+        
+    for n in negatives:
+        pdf_cond_Ns.append(st.norm(*st.norm.fit(n)).pdf)
+    
+    P_P = labels.mean()
+    P_N = 1-P_P
+    
+    def pdf(x):
+        p_prod = P_P
+        n_prod = P_N
+        for i, pp in enumerate(pdf_cond_Ps):
+            p_prod *= pp(x[i])
+        for i, pn in enumerate(pdf_cond_Ns):
+            n_prod *= pn(x[i])
+        return p_prod/(p_prod + n_prod)
+
+    return pdf
+```
+
+```{python}
+pdf_a_condall = make_pdf_P_condall(data_train.counterfeit==1, [data_train[d] for d in data_train.iloc[:,0:4]])
+```
+
+```{python}
+test_labels = data_test.counterfeit==1
+test_classification = pdf_a_condall([data_test[d] for d in data_test.iloc[:,0:4]])>0.5
+ConfusionMatrixDisplay.from_predictions(test_labels, test_classification, display_labels=('Not Counterfeit', 'Counterfeit'), values_format='5d');
+```
+
+```{python}
+fprs, tprs, thds = roc_curve(test_labels, pdf_a_condall([data_test[d] for d in data_test.iloc[:,0:4]]))
+a_aucall = roc_auc_score(test_labels, pdf_a_condall([data_test[d] for d in data_test.iloc[:,0:4]]))
+def roc_plot(figsize=[fig_height,fig_height]):
+    """Returns figure and axes object for plotting ROC curve
+    setting aspect ration to one and labeling the axes.
+    """
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.set_aspect(1)
+    ax.set_xlabel('FPR');
+    ax.set_ylabel('TPR');
+    return fig,ax
+fig, ax = roc_plot()
+fpr = np.sum(test_classification> test_labels)/np.sum(test_labels)
+fnr = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
+tpr = 1-fnr
+
+roc = ax.plot(fprs,tprs, color='blue');
+ax.scatter([fpr],[tpr],s = 30, color='blue', zorder=5)
+ax.text(0.7, 0.8, "AUC = {:4.2f}\nAUC2 = {:4.2f}\nAUCall = {:4.2f}".format(a_auc, a_auc2, a_aucall), fontsize=12);
+
+ax.set_title("ROC curve", fontsize=14);
+ax.plot([0,1],[0,1],'-', c='grey', linewidth = 1 )
+ax.plot([0,0,1],[0,1,1],'--', c = roc[0].get_color() , linewidth=0.5)
+ax.scatter([0],[0],s = 30, c = roc[0].get_color() )
+ax.scatter([1],[1],s = 30)
+ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
+ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
+ax.grid()
+```
+
+```{python}
+
+```

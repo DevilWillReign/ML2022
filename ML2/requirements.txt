@@ -1,0 +1,10 @@
+jupyterlab
+jupytext
+numpy
+scipy
+matplotlib
+seaborn
+pandas
+scikit-learn
+scrapbook
+wheel
