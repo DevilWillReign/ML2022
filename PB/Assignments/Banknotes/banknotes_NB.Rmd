@@ -148,8 +148,8 @@ ConfusionMatrixDisplay.from_predictions(test_labels, test_classification, displa
 ```
 
 ```{python}
-fprs, tprs, thds = roc_curve(test_labels, pdf_a_cond(data_test.a0))
-a_auc = roc_auc_score(test_labels, pdf_a_cond(data_test.a0))
+fprs1, tprs1, thds1 = roc_curve(test_labels, pdf_a_cond(data_test.a0))
+a0_auc = roc_auc_score(test_labels, pdf_a_cond(data_test.a0))
 def roc_plot(figsize=[fig_height,fig_height]):
     """Returns figure and axes object for plotting ROC curve
     setting aspect ration to one and labeling the axes.
@@ -160,18 +160,18 @@ def roc_plot(figsize=[fig_height,fig_height]):
     ax.set_ylabel('TPR');
     return fig,ax
 fig, ax = roc_plot()
-fpr = np.sum(test_classification> test_labels)/np.sum(test_labels)
-fnr = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
-tpr = 1-fnr
+fpr1 = np.sum(test_classification> test_labels)/np.sum(test_labels)
+fnr1 = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
+tpr1 = 1-fnr1
 
-roc = ax.plot(fprs,tprs, color='blue');
-ax.scatter([fpr],[tpr],s = 30, color='blue', zorder=5)
-ax.text(0.7, 0.8, "AUC = {:4.2f}".format(a_auc), fontsize=12);
+roc1 = ax.plot(fprs1,tprs1, color='blue');
+ax.scatter([fpr1],[tpr1],s = 30, color='blue', zorder=5)
+ax.text(0.7, 0.8, "AUC = {:4.2f}".format(a0_auc), fontsize=12);
 
 ax.set_title("ROC curve", fontsize=14);
 ax.plot([0,1],[0,1],'-', c='grey', linewidth = 1 )
-ax.plot([0,0,1],[0,1,1],'--', c = roc[0].get_color() , linewidth=0.5)
-ax.scatter([0],[0],s = 30, c = roc[0].get_color() )
+ax.plot([0,0,1],[0,1,1],'--', c = roc1[0].get_color() , linewidth=0.5)
+ax.scatter([0],[0],s = 30, c = roc1[0].get_color() )
 ax.scatter([1],[1],s = 30)
 ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
 ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
@@ -224,8 +224,8 @@ ConfusionMatrixDisplay.from_predictions(test_labels, test_classification, displa
 ```
 
 ```{python}
-fprs, tprs, thds = roc_curve(test_labels, pdf_a_cond2(data_test.a0, data_test.a1))
-a_auc2 = roc_auc_score(test_labels, pdf_a_cond2(data_test.a0, data_test.a1))
+fprs2, tprs2, thds2 = roc_curve(test_labels, pdf_a_cond2(data_test.a0, data_test.a1))
+a01_auc = roc_auc_score(test_labels, pdf_a_cond2(data_test.a0, data_test.a1))
 def roc_plot(figsize=[fig_height,fig_height]):
     """Returns figure and axes object for plotting ROC curve
     setting aspect ration to one and labeling the axes.
@@ -236,18 +236,22 @@ def roc_plot(figsize=[fig_height,fig_height]):
     ax.set_ylabel('TPR');
     return fig,ax
 fig, ax = roc_plot()
-fpr = np.sum(test_classification> test_labels)/np.sum(test_labels)
-fnr = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
-tpr = 1-fnr
+fpr2 = np.sum(test_classification> test_labels)/np.sum(test_labels)
+fnr2 = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
+tpr2 = 1-fnr2
 
-roc = ax.plot(fprs,tprs, color='blue');
-ax.scatter([fpr],[tpr],s = 30, color='blue', zorder=5)
-ax.text(0.7, 0.8, "AUC = {:4.2f}\nAUC2 = {:4.2f}".format(a_auc, a_auc2), fontsize=12);
+
+roc1 = ax.plot(fprs1,tprs1, color='blue');
+ax.scatter([fpr1],[tpr1],s = 30, color='blue', zorder=5)
+
+roc2 = ax.plot(fprs2,tprs2, color='red');
+ax.scatter([fpr2],[tpr2],s = 30, color='red', zorder=5)
+ax.text(0.7, 0.8, "AUC = {:4.2f}\nAUC2 = {:4.2f}".format(a0_auc, a01_auc), fontsize=12);
 
 ax.set_title("ROC curve", fontsize=14);
 ax.plot([0,1],[0,1],'-', c='grey', linewidth = 1 )
-ax.plot([0,0,1],[0,1,1],'--', c = roc[0].get_color() , linewidth=0.5)
-ax.scatter([0],[0],s = 30, c = roc[0].get_color() )
+ax.plot([0,0,1],[0,1,1],'--', c = roc2[0].get_color() , linewidth=0.5)
+ax.scatter([0],[0],s = 30, c = roc2[0].get_color() )
 ax.scatter([1],[1],s = 30)
 ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
 ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
@@ -305,8 +309,8 @@ ConfusionMatrixDisplay.from_predictions(test_labels, test_classification, displa
 ```
 
 ```{python}
-fprs, tprs, thds = roc_curve(test_labels, pdf_a_condall([data_test[d] for d in data_test.iloc[:,0:4]]))
-a_aucall = roc_auc_score(test_labels, pdf_a_condall([data_test[d] for d in data_test.iloc[:,0:4]]))
+fprs3, tprs3, thds3 = roc_curve(test_labels, pdf_a_condall([data_test[d] for d in data_test.iloc[:,0:4]]))
+aall_auc = roc_auc_score(test_labels, pdf_a_condall([data_test[d] for d in data_test.iloc[:,0:4]]))
 def roc_plot(figsize=[fig_height,fig_height]):
     """Returns figure and axes object for plotting ROC curve
     setting aspect ration to one and labeling the axes.
@@ -317,24 +321,26 @@ def roc_plot(figsize=[fig_height,fig_height]):
     ax.set_ylabel('TPR');
     return fig,ax
 fig, ax = roc_plot()
-fpr = np.sum(test_classification> test_labels)/np.sum(test_labels)
-fnr = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
-tpr = 1-fnr
+fpr3 = np.sum(test_classification> test_labels)/np.sum(test_labels)
+fnr3 = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
+tpr3 = 1-fnr3
 
-roc = ax.plot(fprs,tprs, color='blue');
-ax.scatter([fpr],[tpr],s = 30, color='blue', zorder=5)
-ax.text(0.7, 0.8, "AUC = {:4.2f}\nAUC2 = {:4.2f}\nAUCall = {:4.2f}".format(a_auc, a_auc2, a_aucall), fontsize=12);
+roc1 = ax.plot(fprs1,tprs1, color='blue');
+ax.scatter([fpr1],[tpr1],s = 30, color='blue', zorder=5)
+
+roc2 = ax.plot(fprs2,tprs2, color='red');
+ax.scatter([fpr2],[tpr2],s = 30, color='red', zorder=5)
+
+roc3 = ax.plot(fprs3,tprs3, color='green');
+ax.scatter([fpr3],[tpr3],s = 30, color='green', zorder=5)
+ax.text(0.7, 0.8, "AUC = {:4.2f}\nAUC2 = {:4.2f}\nAUCall = {:4.2f}".format(a0_auc, a01_auc, aall_auc), fontsize=12);
 
 ax.set_title("ROC curve", fontsize=14);
 ax.plot([0,1],[0,1],'-', c='grey', linewidth = 1 )
-ax.plot([0,0,1],[0,1,1],'--', c = roc[0].get_color() , linewidth=0.5)
-ax.scatter([0],[0],s = 30, c = roc[0].get_color() )
+ax.plot([0,0,1],[0,1,1],'--', c = roc3[0].get_color() , linewidth=0.5)
+ax.scatter([0],[0],s = 30, c = roc3[0].get_color() )
 ax.scatter([1],[1],s = 30)
 ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
 ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
 ax.grid()
-```
-
-```{python}
-
 ```

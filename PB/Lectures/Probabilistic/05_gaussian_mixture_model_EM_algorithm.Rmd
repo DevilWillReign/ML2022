@@ -328,7 +328,7 @@ Given $\gamma_\theta(x)$ we can calculate the __expected__ log likehood
 <!-- #endregion -->
 
 <!-- #region slideshow={"slide_type": "fragment"} tags=[] -->
-$$Q(\theta', \theta) \equiv E_{P(z|x, \theta)}\left[\log P(x, z|\theta')\right]\equiv \sum_i \left[\gamma_\theta(x_i) \log P( x_i, z_i=1|\theta')+(1-\gamma_\theta(x_i))\log P( x_i, z_i=0|\theta^')\right]$$
+$$Q(\theta', \theta) \equiv E_{P(z|x, \theta)}\left[\log P(x, z|\theta')\right]\equiv \sum_i \left[\gamma_\theta(x_i) \log P( x_i, z_i=1|\theta')+(1-\gamma_\theta(x_i))\log P(x_i, z_i=0|\theta')\right]$$
 <!-- #endregion -->
 
 <!-- #region slideshow={"slide_type": "skip"} tags=[] -->
