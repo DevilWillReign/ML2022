@@ -294,3 +294,7 @@ print(f"2 clusters {-cv2['test_score'].mean():6.4f}  3 clusters {-cv3['test_scor
 <!-- #region slideshow={"slide_type": "skip"} -->
 We see that the results are almost indistinguishable. But note that their are also different from the values obtained on the test set. That's because all of those are  statistical estimators so actually they are random variables themself :( The  estimate of variance of those estimators  is  difficult  and beyond the subject of this lecture. Interested readers may consult [No Unbiased Estimator of the Variance of K-Fold Cross-Validation](http://www.jmlr.org/papers/volume5/grandvalet04a/grandvalet04a.pdf).
 <!-- #endregion -->
+
+```{python}
+
+```

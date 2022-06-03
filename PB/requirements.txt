@@ -8,3 +8,8 @@ pandas
 scikit-learn
 scrapbook
 wheel
+-f https://download.pytorch.org/whl/cu113
+torch
+torchvision
+torchaudio
+ipywidgets

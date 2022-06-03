@@ -108,7 +108,7 @@ also please save the ROC plot
 
 ```{python}
 fig, ax = plt.subplots(figsize=(10, 10))
-ax.plot(fprsA, tprsA, label="{:s}  {:5.3f}".format("QDA", auc));
+ax.plot(fprsA, tprsA, label="{:s}  {:5.3f}".format("QDA", aucA));
 ax.plot([0,1],[0,1]);
 ax.legend()
 sb.glue('A_ROC',fig, "display", display=False);
@@ -251,15 +251,26 @@ folder = KFold(5,shuffle=True, random_state=67544)
 ```
 
 ```{python}
-f1=0
 n_cmp_pos=None
 n_cmp_neg=None
 best_f1_score=None
+best_pos_c = None
+best_neg_c = None
+best_f1_after_n = 0
 
-for train_i, test_i in folder.split(train_data, train_lbl_data):
-    best_f1_score, n_cmp_neg, n_cmp_pos = evaluate(10,8,train_data.iloc[train_i], train_lbl_data.iloc[train_i], train_data.iloc[test_i], train_lbl_data.iloc[test_i])
-    f1+=best_f1_score
-print(f1/folder.get_n_splits())
+for pos_c in range(2, 13):
+    for neg_c in range(2, 13):
+        f1=0
+        for train_i, test_i in folder.split(train_data, train_lbl_data):
+            best_f1_score, n_cmp_neg, n_cmp_pos = evaluate(neg_c,pos_c,train_data.iloc[train_i], train_lbl_data.iloc[train_i], train_data.iloc[test_i], train_lbl_data.iloc[test_i])
+            f1+=best_f1_score
+        if best_f1_after_n < f1/folder.get_n_splits():
+            best_pos_c = pos_c
+            best_neg_c = neg_c
+            best_f1_after_n = f1/folder.get_n_splits()
+
+print(f"Best f1 {best_f1_score}, best pos c {best_pos_c}, best neg c {best_neg_c}")
+
 ```
 
 ```{python}
@@ -325,22 +336,55 @@ sb.glue('C_ROC',fig, "display", display=False);
 Assume that 1% of all the customers in your store try to pay with a counterfeit 100PLN bill. If you accept the counterfeit bill you loose 100PLN. If you reject a valid bill,  you may loose the purchase, you estimate this loss as 15PLN on average. For each of the three classifiers find the threshold that minimises your losses and calculates the minimum loss for each classifier. Show the optimal classifiers points on the ROC curves.
 
 ```{python}
-sb.glue('D_A_scores',['tnr', 'fpr', 'fnr', 'tpr', 'precision', 'f1', 'auc', 'min_loss', 'threshold'], display=True)
+def find_min(fprs, tprs, thds):
+    min_loss = 10**20
+    min_loss_indx = 0
+    for i, fpr in enumerate(fprs):
+        loss = 99*fpr*15 + 100 * (1-tprs[i])
+        if min_loss > loss:
+            min_loss = loss
+            min_loss_indx = i
+    return fprs[min_loss_indx], tprs[min_loss_indx], thds[min_loss_indx], min_loss
 ```
 
 ```{python}
-sb.glue('D_B_scores',['tnr', 'fpr', 'fnr', 'tpr', 'precision', 'f1', 'auc', 'min_loss', 'threshold'], display=True)
+min_fprA, min_tprA, min_thdsA, min_lossA = find_min(fprsA, tprsA, thdsA)
 ```
 
 ```{python}
-sb.glue('D_C_scores',['tnr', 'fpr', 'fnr', 'tpr', 'precision', 'f1', 'auc', 'min_loss', 'threshold'], display=True)
+sb.glue('D_A_scores',['tnr', 'fpr', 'fnr', 'tpr', 'auc', 'min_loss', 'threshold'], display=True)
+sb.glue('D_A_scores',[1-min_tprA, min_fprA, 1-min_tprA, min_tprA, aucA, min_lossA, min_thdsA], display=True)
+```
+
+```{python}
+min_fprB, min_tprB, min_thdsB, min_lossB = find_min(fprsB, tprsB, thdsB)
+```
+
+```{python}
+sb.glue('D_B_scores',['tnr', 'fpr', 'fnr', 'tpr', 'auc', 'min_loss', 'threshold'], display=True)
+sb.glue('D_B_scores',[1-min_tprB, min_fprB, 1-min_tprB, min_tprB, aucB, min_lossB, min_thdsB], display=True)
+```
+
+```{python}
+min_fprC, min_tprC, min_thdsC, min_lossC = find_min(fprsC, tprsC, thdsC)
+```
+
+```{python}
+sb.glue('D_C_scores',['tnr', 'fpr', 'fnr', 'tpr', 'auc', 'min_loss', 'threshold'], display=True)
+sb.glue('D_C_scores',[1-min_tprC, min_fprC, 1-min_tprC, min_tprC, aucC, min_lossC, min_thdsC], display=True)
 ```
 
 also please save the ROC plot
 
 ```{python}
-fig, ax = plt.subplots()
-#plot ROCs
+fig, ax = plt.subplots(figsize=(10, 10))
+ax.plot(fprsA, tprsA, label="{:s}  {:5.3f}".format("QDA", aucA));
+ax.plot(fprsB, tprsB, label="{:s}  {:5.3f}".format("MGD", aucB));
+ax.plot(fprsC, tprsC, label="{:s}  {:5.3f}".format("Kfold_MGD", aucC));
 ax.plot([0,1],[0,1]);
+ax.scatter(min_fprA, min_tprA, color="black");
+ax.scatter(min_fprB, min_tprB, color="black");
+ax.scatter(min_fprC, min_tprC, color="black");
+ax.legend()
 sb.glue('D_ROC',fig, "display", display=False);
 ```

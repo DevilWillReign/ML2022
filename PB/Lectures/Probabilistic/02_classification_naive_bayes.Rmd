@@ -964,7 +964,3 @@ ax.legend();
 <!-- #region slideshow={"slide_type": "skip"} -->
 As we can see adding weight  feature in form of the BMI substantially increased the quality of our classifier. 
 <!-- #endregion -->
-
-```{python}
-
-```
