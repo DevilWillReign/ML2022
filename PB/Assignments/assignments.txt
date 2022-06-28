@@ -1,0 +1,17 @@
+Banknotes
+
+Naive Bayes 9 points
+
+Messy and hard to read. Lables are wrong on the confusion matrix (but values are OK). 
+
+What does the blue point on the first ROC curve mean?
+
+GMDA  5 points
+
+It looks that for the problem C you are using wrongly the classfier used in B. But It looks that you have calculated it correctly.
+Point D looks right but has the same problem. 
+
+
+Cinderella
+
+Please state what is your guess as to the  real number of components? 
