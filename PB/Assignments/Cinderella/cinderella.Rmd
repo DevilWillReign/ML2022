@@ -54,6 +54,7 @@ data.head()
 ```{python}
 from sklearn.model_selection import train_test_split
 from sklearn.mixture import GaussianMixture
+np.random.seed(42)
 ```
 
 ```{python}
@@ -61,22 +62,25 @@ c_train, c_test = train_test_split(data, test_size=0.2)
 ```
 
 ```{python}
-best_c_gm = None
-best_n_comp = 2
-err = 10**-5
-best_score = 100
+from math import fabs
+err = 10**-3
+best_n_comp_all = {}
 scores = []
 for n_c in range(2, 14):
     c_gm = GaussianMixture(n_components=n_c, tol=1e-5, n_init=3)
     c_gm.fit(c_train)
     score = -c_gm.score(c_test)
     scores.append((n_c, score))
-    if best_score > score:
-        best_score = score
-        best_c_gm = c_gm
-        best_n_comp = n_c
-print(best_score, best_n_comp)
+n_c, score = zip(*scores)
+best_score = min(score)
+best_n_comp = np.argmin(score) + 2
 ```
+
+```{python}
+print(f"Best log score: {best_score}, best number of components: {best_n_comp}")
+```
+
+Real number of components: 5
 
 ```{python}
 x, y = zip(*scores)
@@ -85,6 +89,7 @@ ax.plot(x, y)
 ```
 
 ```{python}
+best_c_gm = GaussianMixture(n_components=5, tol=1e-5, n_init=3)
 best_c_gm.fit(c_train)
 ```
 
@@ -113,8 +118,4 @@ dataset = pd.concat([data.assign(lable=i) for i in labels], ignore_index=True)
 
 ```{python}
 dataset.head()
-```
-
-```{python}
-
 ```

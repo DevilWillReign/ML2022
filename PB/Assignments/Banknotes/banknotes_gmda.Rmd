@@ -168,20 +168,20 @@ def make_predict_proba(cmp0, cmp1, pi0=0.5, pi1=.5):
 ```
 
 ```{python}
-mgd_predict_proba = make_predict_proba(bank0_cmp, bank1_cmp, 0.5, 0.5)
+mgd_predict_probaB = make_predict_proba(bank0_cmp, bank1_cmp, 0.5, 0.5)
 ```
 
 ```{python}
-mgd_proba = mgd_predict_proba(test_data)
+mgd_probaB = mgd_predict_probaB(test_data)
 ```
 
 ```{python}
-con_mat = pd.DataFrame(confusion_matrix(test_lbl_data, mgd_proba>0.5, normalize='true'))
+con_mat = pd.DataFrame(confusion_matrix(test_lbl_data, mgd_probaB>0.5, normalize='true'))
 ```
 
 ```{python}
-fprsB, tprsB, thdsB = roc_curve(test_lbl_data, mgd_proba)
-aucB = roc_auc_score(test_lbl_data, mgd_proba)
+fprsB, tprsB, thdsB = roc_curve(test_lbl_data, mgd_probaB)
+aucB = roc_auc_score(test_lbl_data, mgd_probaB)
 ```
 
 ```{python}
@@ -225,29 +225,33 @@ Use k-fold cross validation to find the optimal number of gaussian components fo
 __Hint__ use the `StratifiedKFold` function from scikit-learn library to generate folds. 
 
 ```{python}
-def evaluate(nc0, nc1,X,y, X_valid, y_valid):
+np.random.seed(67544)
+```
+
+```{python}
+def evaluate(nc0, nc1, X_train, y_train, X_test, y_test):
 
     bank0_cmp = GaussianMixture(n_components=nc0, max_iter=100, tol=0.0001) 
     bank1_cmp = GaussianMixture(n_components=nc1, max_iter=100, tol=0.0001) 
 
-    bank0 = X[y==0]
-    bank1 = X[y==1]
+    bank0 = X_train[y_train==0]
+    bank1 = X_train[y_train==1]
 
     bank0_cmp.fit(bank0)
     bank1_cmp.fit(bank1)
     
     gmda =  make_predict_proba(bank0_cmp, bank1_cmp, 0.5, 0.5)
-    proba = gmda(X_valid)
+    proba = gmda(X_test)
     
-    return f1_score(y_valid, proba>0.5), bank0_cmp, bank1_cmp
+    return f1_score(y_test, proba>0.5)
 ```
 
 ```{python}
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 ```
 
 ```{python}
-folder = KFold(5,shuffle=True, random_state=67544)
+folder = StratifiedKFold(5,shuffle=True, random_state=67544)
 ```
 
 ```{python}
@@ -257,12 +261,19 @@ best_f1_score=None
 best_pos_c = None
 best_neg_c = None
 best_f1_after_n = 0
+kfold_data = data.iloc[:,0:3].to_numpy()
+kfold_labels = data.iloc[:,3].to_numpy()
 
 for pos_c in range(2, 13):
     for neg_c in range(2, 13):
         f1=0
-        for train_i, test_i in folder.split(train_data, train_lbl_data):
-            best_f1_score, n_cmp_neg, n_cmp_pos = evaluate(neg_c,pos_c,train_data.iloc[train_i], train_lbl_data.iloc[train_i], train_data.iloc[test_i], train_lbl_data.iloc[test_i])
+        for train_i, test_i in folder.split(kfold_data, kfold_labels):
+            best_f1_score = evaluate(neg_c,
+                                     pos_c,
+                                     kfold_data[train_i],
+                                     kfold_labels[train_i],
+                                     kfold_data[test_i],
+                                     kfold_labels[test_i])
             f1+=best_f1_score
         if best_f1_after_n < f1/folder.get_n_splits():
             best_pos_c = pos_c
@@ -276,23 +287,31 @@ print(f"Best f1 {best_f1_score}, best pos c {best_pos_c}, best neg c {best_neg_c
 ```{python}
 #  store the results of the best fit 
 sb.glue("C_n_cmp",['n_cmp_pos', 'n_cmp_neg', 'best_f1_score'])
+sb.glue("C_n_cmp",[best_pos_c, best_neg_c, best_f1_score])
 ```
 
 ```{python}
-mgd_predict_proba2 = make_predict_proba(n_cmp_neg, n_cmp_pos, 0.5, 0.5)
+n_cmp_neg = GaussianMixture(n_components=best_neg_c, max_iter=100, tol=0.0001)
+n_cmp_pos = GaussianMixture(n_components=best_pos_c, max_iter=100, tol=0.0001)
+n_cmp_neg.fit(bank0)
+n_cmp_pos.fit(bank1)
 ```
 
 ```{python}
-mgd_proba2 = mgd_predict_proba(test_data)
+mgd_predict_probaC = make_predict_proba(n_cmp_neg, n_cmp_pos, 0.5, 0.5)
 ```
 
 ```{python}
-con_mat = pd.DataFrame(confusion_matrix(test_lbl_data, mgd_proba2>0.5, normalize='true'))
+mgd_probaC = mgd_predict_probaC(test_data)
 ```
 
 ```{python}
-fprsC, tprsC, thdsC = roc_curve(test_lbl_data, mgd_proba2)
-aucC = roc_auc_score(test_lbl_data, mgd_proba2)
+con_mat = pd.DataFrame(confusion_matrix(test_lbl_data, mgd_probaC>0.5, normalize='true'))
+```
+
+```{python}
+fprsC, tprsC, thdsC = roc_curve(test_lbl_data, mgd_probaC)
+aucC = roc_auc_score(test_lbl_data, mgd_probaC)
 ```
 
 ```{python}
@@ -382,9 +401,13 @@ ax.plot(fprsA, tprsA, label="{:s}  {:5.3f}".format("QDA", aucA));
 ax.plot(fprsB, tprsB, label="{:s}  {:5.3f}".format("MGD", aucB));
 ax.plot(fprsC, tprsC, label="{:s}  {:5.3f}".format("Kfold_MGD", aucC));
 ax.plot([0,1],[0,1]);
-ax.scatter(min_fprA, min_tprA, color="black");
-ax.scatter(min_fprB, min_tprB, color="black");
-ax.scatter(min_fprC, min_tprC, color="black");
+ax.scatter(min_fprA, min_tprA, color="blue");
+ax.scatter(min_fprB, min_tprB, color="orange");
+ax.scatter(min_fprC, min_tprC, color="green");
 ax.legend()
 sb.glue('D_ROC',fig, "display", display=False);
+```
+
+```{python}
+
 ```

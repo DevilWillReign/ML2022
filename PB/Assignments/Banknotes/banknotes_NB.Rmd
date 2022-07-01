@@ -144,7 +144,7 @@ ConfusionMatrixDisplay.from_predictions(train_labels, train_classification, disp
 ```{python}
 test_labels = data_test.counterfeit==1
 test_classification = pdf_a_cond(data_test.a0)>0.5
-ConfusionMatrixDisplay.from_predictions(test_labels, test_classification, display_labels=('Not Counterfeit', 'Counterfeit'), values_format='5d');
+ConfusionMatrixDisplay.from_predictions(test_labels, test_classification, display_labels=('Counterfeit', 'Not Counterfeit'), values_format='5d');
 ```
 
 ```{python}
@@ -160,8 +160,8 @@ def roc_plot(figsize=[fig_height,fig_height]):
     ax.set_ylabel('TPR');
     return fig,ax
 fig, ax = roc_plot()
-fpr1 = np.sum(test_classification> test_labels)/np.sum(test_labels)
-fnr1 = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
+fpr1 = np.sum(test_classification > test_labels) / np.sum(test_labels)
+fnr1 = np.sum(test_classification < test_labels) / (len(test_labels) - np.sum(test_labels))
 tpr1 = 1-fnr1
 
 roc1 = ax.plot(fprs1,tprs1, color='blue');
@@ -175,7 +175,7 @@ ax.scatter([0],[0],s = 30, c = roc1[0].get_color() )
 ax.scatter([1],[1],s = 30)
 ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
 ax.scatter([0],[1],s = 30, edgecolor='blue', facecolor='white', zorder=5)
-ax.grid()
+ax.grid() 
 ```
 
 ## Problem 2
@@ -236,8 +236,8 @@ def roc_plot(figsize=[fig_height,fig_height]):
     ax.set_ylabel('TPR');
     return fig,ax
 fig, ax = roc_plot()
-fpr2 = np.sum(test_classification> test_labels)/np.sum(test_labels)
-fnr2 = np.sum(test_classification < test_labels)/(len(test_labels)-np.sum(test_labels))
+fpr2 = np.sum(test_classification > test_labels) / np.sum(test_labels)
+fnr2 = np.sum(test_classification < test_labels) / (len(test_labels) - np.sum(test_labels))
 tpr2 = 1-fnr2
 
 
